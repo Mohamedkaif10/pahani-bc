@@ -11,3 +11,4 @@ class PahaniRequest(SQLModel, table=True):
     from_date: date
     to_date: date
     timestamp: Optional[int] = None
+    processed: bool = Field(default=False)
