@@ -4,6 +4,7 @@ from passlib.context import CryptContext
 from pydantic import BaseModel, EmailStr
 from app.models.user import User
 from app.db import get_session
+from typing import Optional
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
