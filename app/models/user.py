@@ -6,6 +6,9 @@ class User(SQLModel, table=True):
     name: str
     email: str
     password: str
-    role: str  # 'admin' or 'user'
+    role: str  
+    aadhaar_number: Optional[str] = None
+    patadar_passbook_number: Optional[str] = None
+    survey_number: Optional[str] = None
 
     requests: List["PahaniRequest"] = Relationship(back_populates="user")

@@ -12,6 +12,9 @@ class UserCreate(BaseModel):
     name: str
     email: EmailStr
     password: str
+    aadhaar_number: Optional[str] = None
+    patadar_passbook_number: Optional[str] = None
+    survey_number: Optional[str] = None
 
 class LoginData(BaseModel):
     email: EmailStr
