@@ -12,5 +12,6 @@ class PahaniRequest(SQLModel, table=True):
     to_date: date
     timestamp: Optional[int] = None
     processed: bool = Field(default=False)
+    is_paid: bool = Field(default=False)
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user: Optional["User"] = Relationship(back_populates="requests")

@@ -4,3 +4,4 @@ pandas
 sqlmodel 
 psycopg2-binary
 dotenv
+python-multipart

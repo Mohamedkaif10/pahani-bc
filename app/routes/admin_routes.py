@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlmodel import Session, select
 from app.db import get_session
 from app.models.pahani import PahaniRequest
+from app.models.user import User
 from pydantic import BaseModel
-
+from app.utils.auth_utils import get_current_user, require_admin
 router = APIRouter()
 
 UPLOAD_DIR = "uploads/pdfs" 
