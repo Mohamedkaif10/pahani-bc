@@ -6,11 +6,20 @@ from app.db import get_session
 from app.models.user import User
 from sqlmodel import Session, select
 import os
+from datetime import datetime, timezone, timedelta
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login") 
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret")
 ALGORITHM = "HS256"
+
+def create_token(user_id: int) -> str:
+    expire = datetime.now(timezone.utc) + timedelta(days=30)
+    payload = {
+        "sub": str(user_id),
+        "exp": expire
+    }
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)) -> User:
     try:

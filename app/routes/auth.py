@@ -5,6 +5,7 @@ from pydantic import BaseModel, EmailStr
 from app.models.user import User
 from app.db import get_session
 from typing import Optional
+from app.utils.auth_utils import create_token
 
 router = APIRouter()
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
