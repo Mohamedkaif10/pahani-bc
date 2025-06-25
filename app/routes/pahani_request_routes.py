@@ -5,6 +5,7 @@ from app.models.pahani import PahaniRequest
 from app.utils.auth_utils import get_current_user,require_admin
 router = APIRouter()
 from app.models.user import User
+from fastapi.responses import FileResponse
 
 @router.post("/pahani-request")
 def create_request(

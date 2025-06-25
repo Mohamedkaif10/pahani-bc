@@ -5,6 +5,8 @@ from app.models.pahani import PahaniRequest
 from app.models.user import User
 from pydantic import BaseModel
 from app.utils.auth_utils import get_current_user, require_admin
+import os
+import uuid
 router = APIRouter()
 
 UPLOAD_DIR = "uploads/pdfs" 
