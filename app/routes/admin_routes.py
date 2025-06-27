@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from app.utils.auth_utils import get_current_user, require_admin
 import os
 import uuid
+from app.utils.s3_utils import upload_pdf_to_s3
 router = APIRouter()
 
 UPLOAD_DIR = "uploads/pdfs" 
@@ -40,10 +41,10 @@ def mark_processed(req: ProcessRequest, session: Session = Depends(get_session))
 
 @router.post("/admin/upload-pahani-pdf/{request_id}")
 def upload_pahani_pdf(
-    request_id: int,
+    request_id: str,  
     file: UploadFile = File(...),
     session: Session = Depends(get_session),
-    current_user: User = Depends(require_admin)  
+    current_user: User = Depends(require_admin)
 ):
     pahani_request = session.exec(
         select(PahaniRequest).where(PahaniRequest.id == request_id)
@@ -54,15 +55,17 @@ def upload_pahani_pdf(
 
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    filename = f"{uuid.uuid4()}_{file.filename}"
-    file_path = os.path.join(UPLOAD_DIR, filename)
 
-    with open(file_path, "wb") as f:
-        f.write(file.file.read())
+    file_data = file.file.read()
+    s3_url = upload_pdf_to_s3(file_data, file.filename)
 
-    pahani_request.pdf_file_path = file_path
+    pahani_request.pdf_s3_url = s3_url
+    pahani_request.processed = True
+
     session.add(pahani_request)
     session.commit()
 
-    return {"message": "PDF uploaded successfully", "file_path": file_path}
+    return {
+        "message": "PDF uploaded to S3 and request marked as processed",
+        "s3_url": s3_url
+    }

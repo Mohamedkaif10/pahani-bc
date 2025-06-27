@@ -1,14 +1,14 @@
 # app/auth_utils.py
 from jose import JWTError, jwt
 from fastapi import Depends, HTTPException
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.db import get_session
 from app.models.user import User
 from sqlmodel import Session, select
 import os
 from datetime import datetime, timezone, timedelta
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login") 
+auth_scheme = HTTPBearer()
 
 SECRET_KEY = os.getenv("SECRET_KEY", "your-secret")
 ALGORITHM = "HS256"
@@ -21,10 +21,11 @@ def create_token(user_id: int) -> str:
     }
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
-def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_session)) -> User:
+def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(auth_scheme), db: Session = Depends(get_session)) -> User:
+    token = credentials.credentials
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: int = payload.get("sub")
+        user_id: int = int(payload.get("sub"))
         if user_id is None:
             raise HTTPException(status_code=401, detail="Invalid token")
     except JWTError:

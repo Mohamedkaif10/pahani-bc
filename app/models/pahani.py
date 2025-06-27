@@ -15,3 +15,4 @@ class PahaniRequest(SQLModel, table=True):
     is_paid: bool = Field(default=False)
     user_id: Optional[int] = Field(default=None, foreign_key="user.id")
     user: Optional["User"] = Relationship(back_populates="requests")
+    pdf_s3_url: Optional[str] = None
