@@ -42,7 +42,16 @@ def get_request_by_id(request_id: str, session: Session = Depends(get_session)):
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
     return req
-
+    
+@router.get("/user/my-pahani-requests")
+def get_user_requests(
+    session: Session = Depends(get_session),
+    current_user: User = Depends(get_current_user)
+):
+    requests = session.exec(
+        select(PahaniRequest).where(PahaniRequest.user_id == current_user.id)
+    ).all()
+    return requests
 
 @router.get("admin/pahani-request")
 def get_all_requests(

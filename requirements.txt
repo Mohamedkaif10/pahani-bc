@@ -8,3 +8,7 @@ python-multipart
 python-jose[cryptography]
 passlib
 pydantic[email]
+razorpay 
+openpxyl
+boto3
+bcrypt
