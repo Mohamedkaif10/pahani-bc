@@ -10,12 +10,13 @@ import razorpay
 from fastapi import Request
 from dotenv import load_dotenv
 import os
-
+import uuid
 load_dotenv()
 
 RAZORPAY_KEY = os.getenv("RAZORPAY_KEY")
 RAZORPAY_SECRET = os.getenv("RAZORPAY_SECRET")
-
+print("the ",RAZORPAY_KEY)
+print("the ",RAZORPAY_SECRET)
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY, RAZORPAY_SECRET))
 
 @router.post("/pahani-request")
@@ -30,7 +31,6 @@ def create_request(
     session.refresh(request)
     return {"message": "Pahani request saved", "data": request}
 
-
 @router.get("/pahani-request")
 def get_all_requests(session: Session = Depends(get_session)):
     return session.exec(select(PahaniRequest)).all()
@@ -42,7 +42,7 @@ def get_request_by_id(request_id: str, session: Session = Depends(get_session)):
     if not req:
         raise HTTPException(status_code=404, detail="Request not found")
     return req
-    
+
 @router.get("/user/my-pahani-requests")
 def get_user_requests(
     session: Session = Depends(get_session),
@@ -124,7 +124,9 @@ def get_pahani_request_status(
         )
     }
 @router.post("/user/create-payment/{request_id}")
+
 def create_payment_order(
+
     request_id: str,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
@@ -136,12 +138,12 @@ def create_payment_order(
     if req.is_paid:
         raise HTTPException(status_code=400, detail="Already paid")
 
-    amount = 49900  # ₹499.00 in paisa
-
+    amount = 49900  
+    receipt = f"req_{request_id}"[:40] 
     razorpay_order = razorpay_client.order.create({
         "amount": amount,
         "currency": "INR",
-        "receipt": f"receipt_{request_id}",
+        "receipt": receipt,
         "payment_capture": 1
     })
 
@@ -149,9 +151,9 @@ def create_payment_order(
         "order_id": razorpay_order["id"],
         "razorpay_key": RAZORPAY_KEY,
         "amount": amount,
-        "currency": "INR"
+        "currency": "INR",
+        "request_id": request_id,
     }
-
 
 @router.post("/razorpay/webhook")
 async def razorpay_webhook(request: Request, session: Session = Depends(get_session)):

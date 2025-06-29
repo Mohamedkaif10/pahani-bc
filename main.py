@@ -5,13 +5,21 @@ from app.db import init_db
 from app.routes import admin_routes
 app = FastAPI()
 
+from fastapi.middleware.cors import CORSMiddleware
+
+origins = [
+    "http://localhost:5173",  # frontend Vite/React
+    "http://127.0.0.1:5173",  # just in case
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=origins,             # <== DO NOT use "*"
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 init_db()
 app.include_router(location_routes.router, prefix="/api/location")
 app.include_router(pahani_request_routes.router, prefix="/api")

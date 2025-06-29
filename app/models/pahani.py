@@ -1,6 +1,5 @@
-from sqlmodel import SQLModel, Field,Relationship
+from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional
-from datetime import date
 import uuid
 
 class PahaniRequest(SQLModel, table=True):
@@ -8,8 +7,10 @@ class PahaniRequest(SQLModel, table=True):
     district: str
     mandal: str
     village: str
-    from_date: date
-    to_date: date
+    survey_number: str  
+    from_year: int     
+    to_year: int        
+    area: Optional[str] = None
     timestamp: Optional[int] = None
     processed: bool = Field(default=False)
     is_paid: bool = Field(default=False)
