@@ -140,6 +140,25 @@ def verify_otp(
         print("❌ OTP Login Error:", e)
         raise HTTPException(status_code=500, detail="Internal server error")
 
+def login(data: LoginData, db: Session, role: str):
+    user = db.exec(select(User).where(User.email == data.email)).first()
+
+    if not user or not pwd_context.verify(data.password, user.password):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+
+    if user.role != role:
+        raise HTTPException(status_code=403, detail=f"{role.capitalize()} access required")
+
+    token = create_access_token({"sub": str(user.id)})
+    return {
+        "access_token": token,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "role": user.role,
+        }
+    }
+
 @router.post("/login/admin")
 def login_admin(data: LoginData, db: Session = Depends(get_session)):
     return login(data, db, role="admin")

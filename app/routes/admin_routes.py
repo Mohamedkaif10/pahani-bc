@@ -11,15 +11,14 @@ from app.utils.s3_utils import upload_pdf_to_s3
 router = APIRouter()
 
 UPLOAD_DIR = "uploads/pdfs" 
+class ProcessRequest(BaseModel):
+    id: str
+    action: str 
 
 @router.get("/admin/pahani-requests")
 def get_all_requests(session: Session = Depends(get_session)):
     return session.exec(select(PahaniRequest)).all()
 
-
-class ProcessRequest(BaseModel):
-    id: str
-    action: str 
 
 
 @router.post("/admin/pahani-requests/process")
