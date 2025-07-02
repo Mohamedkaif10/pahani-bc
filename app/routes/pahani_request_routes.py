@@ -11,6 +11,8 @@ from fastapi import Request
 from dotenv import load_dotenv
 import os
 import uuid
+import httpx
+from fastapi.responses import Response
 load_dotenv()
 
 RAZORPAY_KEY = os.getenv("RAZORPAY_KEY")
@@ -181,8 +183,8 @@ async def razorpay_webhook(request: Request, session: Session = Depends(get_sess
     return {"status": "ok"}
         
 @router.get("/user/view-pahani-pdf/{request_id}")
-def view_uploaded_pdf(
-    request_id: int,
+async def view_uploaded_pdf(
+    request_id: str,
     session: Session = Depends(get_session),
     current_user: User = Depends(get_current_user)
 ):
@@ -199,9 +201,18 @@ def view_uploaded_pdf(
     if not pahani_request.is_paid:
         raise HTTPException(status_code=403, detail="Please complete payment to access the document.")
 
-    if not pahani_request.pdf_file_path:
+    if not pahani_request.pdf_s3_url:
         raise HTTPException(status_code=404, detail="PDF not uploaded yet.")
 
-    return FileResponse(path=pahani_request.pdf_file_path, media_type="application/pdf", filename="pahani.pdf")
+    async with httpx.AsyncClient() as client:
+        response = await client.get(pahani_request.pdf_s3_url)
+        if response.status_code != 200:
+            raise HTTPException(status_code=404, detail="PDF file not accessible")
+        
+        return Response(
+            content=response.content,
+            media_type="application/pdf",
+            headers={"Content-Disposition": "inline; filename=pahani.pdf"}
+        )
 
 
