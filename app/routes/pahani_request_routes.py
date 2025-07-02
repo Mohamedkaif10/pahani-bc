@@ -15,8 +15,6 @@ load_dotenv()
 
 RAZORPAY_KEY = os.getenv("RAZORPAY_KEY")
 RAZORPAY_SECRET = os.getenv("RAZORPAY_SECRET")
-print("the ",RAZORPAY_KEY)
-print("the ",RAZORPAY_SECRET)
 razorpay_client = razorpay.Client(auth=(RAZORPAY_KEY, RAZORPAY_SECRET))
 
 @router.post("/pahani-request")
