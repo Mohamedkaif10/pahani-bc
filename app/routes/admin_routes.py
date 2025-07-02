@@ -5,6 +5,8 @@ from app.models.pahani import PahaniRequest
 from app.models.user import User
 from pydantic import BaseModel
 from app.utils.auth_utils import get_current_user, require_admin
+from app.models.payment import PaymentTransaction
+from datetime import datetime, timezone
 import os
 import uuid
 from app.utils.s3_utils import upload_pdf_to_s3
@@ -103,3 +105,84 @@ def approve_request(
     session.commit()
     session.refresh(request)
     return {"message": "Request approved successfully", "data": request}
+
+
+@router.get("/admin/pending-payments")
+def get_pending_payments(
+    session: Session = Depends(get_session),
+    current_admin: User = Depends(require_admin)
+):
+    payments = session.exec(
+        select(PaymentTransaction).where(PaymentTransaction.status == "pending")
+    ).all()
+    
+    return [
+        {
+            "id": p.id,
+            "request_id": p.request_id,
+            "user_id": p.user_id,
+            "user_name": p.user.name if p.user else None,
+            "transaction_id": p.transaction_id,
+            "amount": p.amount,
+            "created_at": p.created_at,
+            "request_details": {
+                "district": p.request.district,
+                "mandal": p.request.mandal,
+                "village": p.request.village,
+                "survey_number": p.request.survey_number,
+                "from_year": p.request.from_year,
+                "to_year": p.request.to_year
+            } if p.request else None
+        }
+        for p in payments
+    ]
+
+@router.post("/admin/verify-payment/{payment_id}")
+def verify_payment(
+    payment_id: str,
+    session: Session = Depends(get_session),
+    current_admin: User = Depends(require_admin)
+):
+    payment = session.get(PaymentTransaction, payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    if payment.status != "pending":
+        raise HTTPException(status_code=400, detail="Payment already processed")
+    
+    payment.status = "verified"
+    payment.verified_at = datetime.now(timezone.utc)
+    payment.verified_by = current_admin.id
+    
+    pahani_request = session.get(PahaniRequest, payment.request_id)
+    if pahani_request:
+        pahani_request.is_paid = True
+        session.add(pahani_request)
+    
+    session.add(payment)
+    session.commit()
+    
+    return {"message": "Payment verified successfully"}
+
+
+@router.post("/admin/reject-payment/{payment_id}")
+def reject_payment(
+    payment_id: str,
+    session: Session = Depends(get_session),
+    current_admin: User = Depends(require_admin)
+):
+    payment = session.get(PaymentTransaction, payment_id)
+    if not payment:
+        raise HTTPException(status_code=404, detail="Payment not found")
+    
+    if payment.status != "pending":
+        raise HTTPException(status_code=400, detail="Payment already processed")
+    
+    payment.status = "failed"
+    payment.verified_at = datetime.now(timezone.utc)
+    payment.verified_by = current_admin.id
+    
+    session.add(payment)
+    session.commit()
+    
+    return {"message": "Payment rejected"}
