@@ -16,9 +16,28 @@ class ProcessRequest(BaseModel):
     action: str 
 
 @router.get("/admin/pahani-requests")
-def get_all_requests(session: Session = Depends(get_session)):
-    return session.exec(select(PahaniRequest)).all()
-
+def get_all_requests(
+    session: Session = Depends(get_session),
+    current_admin: User = Depends(require_admin)
+):
+    results = session.exec(select(PahaniRequest)).all()
+    
+    return [
+        {
+            "id": r.id,
+            "district": r.district,
+            "mandal": r.mandal,
+            "village": r.village,
+            "survey_number": r.survey_number,
+            "from_year": r.from_year,
+            "to_year": r.to_year,
+            "timestamp": int(r.timestamp.timestamp() * 1000),
+            "processed": r.processed,
+            "user_id": r.user_id,
+            "user_name": r.user.name if r.user else None
+        }
+        for r in results
+    ]
 
 
 @router.post("/admin/pahani-requests/process")
@@ -68,3 +87,19 @@ def upload_pahani_pdf(
         "message": "PDF uploaded to S3 and request marked as processed",
         "s3_url": s3_url
     }
+
+@router.post("/admin/approve-request/{request_id}")
+def approve_request(
+    request_id: str,
+    session: Session = Depends(get_session),
+    current_admin: User = Depends(require_admin)
+):
+    request = session.get(PahaniRequest, request_id)
+    if not request:
+        raise HTTPException(status_code=404, detail="Request not found")
+    
+    request.processed = True
+    session.add(request)
+    session.commit()
+    session.refresh(request)
+    return {"message": "Request approved successfully", "data": request}
